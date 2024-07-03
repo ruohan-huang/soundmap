@@ -1,70 +1,151 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, Button, Alert, Image } from 'react-native';
+import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { Audio } from 'expo-av';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+type AudioMarker = {
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
+  audioUri: string;
+};
 
 export default function HomeScreen() {
+  const [region, setRegion] = useState<Region | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [markers, setMarkers] = useState<AudioMarker[]>([]);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    })();
+  }, []);
+
+  const onRegionChangeComplete = (newRegion: Region) => {
+    setRegion(newRegion);
+  };
+
+  const handleMapPress = async (event: MapPressEvent) => {
+    const { coordinate } = event.nativeEvent;
+    await startRecording(coordinate);
+  };
+
+  const startRecording = async (coordinate: { latitude: number; longitude: number }) => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setErrorMsg('Permission to access audio was denied');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      Alert.alert('Recording', 'Recording audio. Press stop to finish.', [
+        {
+          text: 'Stop',
+          onPress: async () => await stopRecording(coordinate),
+        },
+      ]);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  const stopRecording = async (coordinate: { latitude: number; longitude: number }) => {
+    try {
+      if (recording) {
+        await recording.stopAndUnloadAsync();
+        const uri = recording.getURI();
+        if (uri) {
+          setMarkers((prevMarkers) => [
+            ...prevMarkers,
+            { coordinate, audioUri: uri },
+          ]);
+        }
+        setRecording(null);
+      }
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+    }
+  };
+
+  const handleMarkerPress = async (audioUri: string) => {
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+      await sound.playAsync();
+    } catch (err) {
+      console.error('Failed to play audio', err);
+    }
+  };
+
+  if (!region) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+        {errorMsg ? <Text>{errorMsg}</Text> : null}
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">hi</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        region={region}
+        onRegionChangeComplete={onRegionChangeComplete}
+        onPress={handleMapPress}
+      >
+        {markers.map((marker, index) => (
+          <Marker
+            key={index}
+            coordinate={marker.coordinate}
+            onPress={() => handleMarkerPress(marker.audioUri)}
+          >
+            <Image
+              source={require('../../assets/images/favicon.png')}
+              style={styles.markerIcon}
+            />
+          </Marker>
+        ))}
+      </MapView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  map: {
+    ...StyleSheet.absoluteFillObject,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  markerIcon: {
+    width: 40,
+    height: 40,
   },
 });
