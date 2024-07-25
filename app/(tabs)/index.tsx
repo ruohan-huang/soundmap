@@ -11,12 +11,13 @@ type AudioMarker = {
   };
   audioUri: string;
 };
-
+let record = new Audio.Recording();
 export default function HomeScreen() {
   const [region, setRegion] = useState<Region | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [markers, setMarkers] = useState<AudioMarker[]>([]);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  let pressed = false;
+  //const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -45,6 +46,7 @@ export default function HomeScreen() {
     await startRecording(coordinate);
   };
 
+ 
   const startRecording = async (coordinate: { latitude: number; longitude: number }) => {
     try {
       const permission = await Audio.requestPermissionsAsync();
@@ -57,34 +59,39 @@ export default function HomeScreen() {
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      setRecording(recording);
+      if (pressed){
+        return;
+      }
       Alert.alert('Recording', 'Recording audio. Press stop to finish.', [
         {
           text: 'Stop',
           onPress: async () => await stopRecording(coordinate),
         },
       ]);
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      record = recording;
+      
     } catch (err) {
+      
       console.error('Failed to start recording', err);
     }
   };
 
   const stopRecording = async (coordinate: { latitude: number; longitude: number }) => {
     try {
-      if (recording) {
-        await recording.stopAndUnloadAsync();
-        const uri = recording.getURI();
+      if (record) {
+
+        await record.stopAndUnloadAsync();
+        const uri = record.getURI();
         if (uri) {
           setMarkers((prevMarkers) => [
             ...prevMarkers,
             { coordinate, audioUri: uri },
           ]);
         }
-        setRecording(null);
+        //record = undefined;
       }
     } catch (err) {
       console.error('Failed to stop recording', err);
@@ -92,12 +99,20 @@ export default function HomeScreen() {
   };
 
   const handleMarkerPress = async (audioUri: string) => {
+    pressed = true;
     try {
       const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
       await sound.playAsync();
+      Alert.alert('Playing', 'Playing audio. Press stop to finish.', [
+        {
+          text: 'Stop',
+          onPress: async () => sound.stopAsync(),
+        },
+      ]);
     } catch (err) {
       console.error('Failed to play audio', err);
     }
+    pressed = false;
   };
 
   if (!region) {
@@ -108,6 +123,8 @@ export default function HomeScreen() {
       </View>
     );
   }
+
+
 
   return (
     <View style={styles.container}>
@@ -121,7 +138,9 @@ export default function HomeScreen() {
           <Marker
             key={index}
             coordinate={marker.coordinate}
-            onPress={() => handleMarkerPress(marker.audioUri)}
+            onPress={() => 
+              handleMarkerPress(marker.audioUri)
+            }
           >
             <Image
               source={require('../../assets/images/favicon.png')}
