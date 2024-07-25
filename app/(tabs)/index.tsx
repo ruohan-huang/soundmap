@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { StyleSheet, View, Text, Button, Alert, Image } from 'react-native';
 import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -142,10 +143,7 @@ export default function HomeScreen() {
               handleMarkerPress(marker.audioUri)
             }
           >
-            <Image
-              source={require('../../assets/images/favicon.png')}
-              style={styles.markerIcon}
-            />
+            <TabBarIcon name={'volume-high'}  />
           </Marker>
         ))}
       </MapView>
