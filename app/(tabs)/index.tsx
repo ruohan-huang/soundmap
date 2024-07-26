@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, Button, Alert, Image } from 'react-native';
 import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Audio } from 'expo-av';
+import { TouchableOpacity, GestureHandlerRootView} from 'react-native-gesture-handler';
 
 type AudioMarker = {
   coordinate: {
@@ -18,7 +19,6 @@ export default function HomeScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [markers, setMarkers] = useState<AudioMarker[]>([]);
   let pressed = false;
-  //const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -27,7 +27,6 @@ export default function HomeScreen() {
         setErrorMsg('Permission to access location was denied');
         return;
       }
-
       let location = await Location.getCurrentPositionAsync({});
       setRegion({
         latitude: location.coords.latitude,
@@ -38,13 +37,19 @@ export default function HomeScreen() {
     })();
   }, []);
 
+
   const onRegionChangeComplete = (newRegion: Region) => {
     setRegion(newRegion);
   };
 
-  const handleMapPress = async (event: MapPressEvent) => {
-    const { coordinate } = event.nativeEvent;
-    await startRecording(coordinate);
+  const handleButtonPress = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      setErrorMsg('Permission to access location was denied');
+      return;
+    }
+    let location = await Location.getCurrentPositionAsync({});
+    await startRecording(location.coords);
   };
 
  
@@ -68,12 +73,15 @@ export default function HomeScreen() {
           text: 'Stop',
           onPress: async () => await stopRecording(coordinate),
         },
+        {
+          text: 'Cancel',
+          onPress: async () => {await record.stopAndUnloadAsync()},
+        },
       ]);
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       record = recording;
-      
     } catch (err) {
       
       console.error('Failed to start recording', err);
@@ -126,30 +134,65 @@ export default function HomeScreen() {
   }
 
 
-
   return (
-    <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        region={region}
-        onRegionChangeComplete={onRegionChangeComplete}
-        onPress={handleMapPress}
-      >
-        {markers.map((marker, index) => (
-          <Marker
-            key={index}
-            coordinate={marker.coordinate}
-            onPress={() => 
-              handleMarkerPress(marker.audioUri)
-            }
+    <GestureHandlerRootView>
+      <View style={styles.container}>
+        <MapView
+          style={styles.map}
+          region={region}
+          showsUserLocation={true}
+          showsBuildings={true}
+          onRegionChangeComplete={onRegionChangeComplete}
+          //onPress={handleMapPress}
+        >
+          {markers.map((marker, index) => (
+              <Marker
+                key={index}
+                coordinate={marker.coordinate}
+                onPress={() => handleMarkerPress(marker.audioUri)}
+              >
+                <View style={{
+                  backgroundColor: '#007bff',
+                  borderRadius: 100,
+                  borderWidth: 1,
+                  width: 33,
+                  height: 33, 
+                }}>
+                  <TabBarIcon name={'volume-high'} color={'white'}  />
+                </View>
+              </Marker>
+          ))}
+        </MapView>
+        <View style={{top: 360, right: -160}}>
+          <TouchableOpacity
+            style={{
+            backgroundColor: '#007bff',
+            padding: 10,
+            borderRadius: 100,
+            borderWidth: 1,
+            width: 80,
+            height: 80, 
+            borderColor: 'black',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+            onPress={handleButtonPress}
           >
-            <TabBarIcon name={'volume-high'}  />
-          </Marker>
-        ))}
-      </MapView>
-    </View>
+            <TabBarIcon
+              name={'mic'}
+              color={'white'}
+              style={{fontSize: 50 }}
+            />
+          </TouchableOpacity>
+        </View>
+        </View>
+    </GestureHandlerRootView>
+
   );
 }
+
+  
+
 
 const styles = StyleSheet.create({
   container: {
