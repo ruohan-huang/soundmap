@@ -18,8 +18,8 @@ export default function HomeScreen() {
   const [region, setRegion] = useState<Region | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [markers, setMarkers] = useState<AudioMarker[]>([]);
+  const [coordinate, setCoordinate] = useState<{latitude: number, longitude: number}>({latitude: -1, longitude: -1});
   let pressed = false;
-
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -28,6 +28,7 @@ export default function HomeScreen() {
         return;
       }
       let location = await Location.getCurrentPositionAsync({});
+      //console.log(location);
       setRegion({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
@@ -43,13 +44,29 @@ export default function HomeScreen() {
   };
 
   const handleButtonPress = async () => {
+    if (coordinate.latitude == -1 && coordinate.longitude == -1){
+      Alert.alert('Fetching Location', 'Move around for better accuracy!', [
+        {
+          text: 'Ok',
+        },
+      ]);
+      return;
+    }
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       setErrorMsg('Permission to access location was denied');
       return;
     }
-    let location = await Location.getCurrentPositionAsync({});
-    await startRecording(location.coords);
+   // let location = await Location.getCurrentPositionAsync({});
+    await startRecording(coordinate);
+  };
+
+  const handleUserLocationUpdate = (event: { nativeEvent: any; }) => {
+    const {nativeEvent} = event;
+    setCoordinate({
+      latitude: nativeEvent.coordinate.latitude,
+      longitude: nativeEvent.coordinate.longitude
+    });
   };
 
  
@@ -143,6 +160,7 @@ export default function HomeScreen() {
           showsUserLocation={true}
           showsBuildings={true}
           onRegionChangeComplete={onRegionChangeComplete}
+          onUserLocationChange={handleUserLocationUpdate}
           //onPress={handleMapPress}
         >
           {markers.map((marker, index) => (
