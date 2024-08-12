@@ -5,6 +5,7 @@ import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Audio } from 'expo-av';
 import { TouchableOpacity, GestureHandlerRootView} from 'react-native-gesture-handler';
+import { makeShareableCloneRecursive } from 'react-native-reanimated';
 
 type AudioMarker = {
   coordinate: {
@@ -12,6 +13,7 @@ type AudioMarker = {
     longitude: number;
   };
   audioUri: string;
+  dB : number;
 };
 let record = new Audio.Recording();
 export default function HomeScreen() {
@@ -77,7 +79,7 @@ export default function HomeScreen() {
         setErrorMsg('Permission to access audio was denied');
         return;
       }
-
+      
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -114,7 +116,7 @@ export default function HomeScreen() {
         if (uri) {
           setMarkers((prevMarkers) => [
             ...prevMarkers,
-            { coordinate, audioUri: uri },
+            { coordinate, audioUri: uri , dB: Math.random() * 30}, //find dB here
           ]);
         }
         //record = undefined;
@@ -124,12 +126,12 @@ export default function HomeScreen() {
     }
   };
 
-  const handleMarkerPress = async (audioUri: string) => {
+  const handleMarkerPress = async (audioUri: string, dB : number) => {
     pressed = true;
     try {
       const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
       await sound.playAsync();
-      Alert.alert('Playing', 'Playing audio. Press stop to finish.', [
+      Alert.alert('Playing', 'Playing audio (' + Math.round(dB * 10.0)/10.0  +  ' dB). Press stop to finish.', [
         {
           text: 'Stop',
           onPress: async () => sound.stopAsync(),
@@ -167,16 +169,16 @@ export default function HomeScreen() {
               <Marker
                 key={index}
                 coordinate={marker.coordinate}
-                onPress={() => handleMarkerPress(marker.audioUri)}
+                onPress={() => handleMarkerPress(marker.audioUri, marker.dB)}
               >
                 <View style={{
-                  backgroundColor: '#007bff',
+                  backgroundColor: marker.dB >= 20 ? '#ff0000' :  marker.dB >= 10 ? '#ff8f00': '#007bff',
                   borderRadius: 100,
                   borderWidth: 1,
                   width: 33,
                   height: 33, 
                 }}>
-                  <TabBarIcon name={'volume-high'} color={'white'}  />
+                  <TabBarIcon name={marker.dB >= 20 ? 'volume-high' : marker.dB >= 10 ? 'volume-medium' : 'volume-low'} color={'white'}  />
                 </View>
               </Marker>
           ))}
