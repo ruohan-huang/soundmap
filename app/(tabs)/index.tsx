@@ -5,7 +5,10 @@ import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Audio } from 'expo-av';
 import { TouchableOpacity, GestureHandlerRootView} from 'react-native-gesture-handler';
-import { makeShareableCloneRecursive } from 'react-native-reanimated';
+import { AndroidAudioEncoder, AndroidOutputFormat, IOSAudioQuality, IOSOutputFormat, RecordingOptionsPresets } from 'expo-av/build/Audio';
+
+
+
 
 type AudioMarker = {
   coordinate: {
@@ -13,7 +16,7 @@ type AudioMarker = {
     longitude: number;
   };
   audioUri: string;
-  dB : number;
+  dBFS : number;
 };
 let record = new Audio.Recording();
 export default function HomeScreen() {
@@ -79,7 +82,6 @@ export default function HomeScreen() {
         setErrorMsg('Permission to access audio was denied');
         return;
       }
-      
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -87,36 +89,41 @@ export default function HomeScreen() {
       if (pressed){
         return;
       }
+      let samples = 0;
+      let total = 0;
       Alert.alert('Recording', 'Recording audio. Press stop to finish.', [
         {
           text: 'Stop',
-          onPress: async () => await stopRecording(coordinate),
+          onPress: async () => await stopRecording(coordinate, total/samples),
         },
         {
           text: 'Cancel',
           onPress: async () => {await record.stopAndUnloadAsync()},
         },
       ]);
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const { recording } = await Audio.Recording.createAsync(RecordingOptionsPresets.HIGH_QUALITY);
       record = recording;
+      recording.setOnRecordingStatusUpdate((status: Audio.RecordingStatus)=> {
+          samples ++;
+          total += status.metering == undefined ? -161 : status.metering;
+          //console.log('Average Volume: ' + (total/samples))
+      });
     } catch (err) {
       
       console.error('Failed to start recording', err);
     }
   };
 
-  const stopRecording = async (coordinate: { latitude: number; longitude: number }) => {
+  const stopRecording = async (coordinate: { latitude: number; longitude: number }, avgVolume: number) => {
     try {
       if (record) {
-
+        console.log(avgVolume);
         await record.stopAndUnloadAsync();
         const uri = record.getURI();
         if (uri) {
           setMarkers((prevMarkers) => [
             ...prevMarkers,
-            { coordinate, audioUri: uri , dB: Math.random() * 30}, //find dB here
+            { coordinate, audioUri: uri , dBFS: avgVolume}, //find dB here
           ]);
         }
         //record = undefined;
@@ -126,12 +133,12 @@ export default function HomeScreen() {
     }
   };
 
-  const handleMarkerPress = async (audioUri: string, dB : number) => {
+  const handleMarkerPress = async (audioUri: string, dBFS : number) => {
     pressed = true;
     try {
       const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
       await sound.playAsync();
-      Alert.alert('Playing', 'Playing audio (' + Math.round(dB * 10.0)/10.0  +  ' dB). Press stop to finish.', [
+      Alert.alert('Playing', 'Playing audio (' + Math.round(dBFS * 10.0)/10.0  +  ' dBFS). Press stop to finish.', [
         {
           text: 'Stop',
           onPress: async () => sound.stopAsync(),
@@ -169,16 +176,16 @@ export default function HomeScreen() {
               <Marker
                 key={index}
                 coordinate={marker.coordinate}
-                onPress={() => handleMarkerPress(marker.audioUri, marker.dB)}
+                onPress={() => handleMarkerPress(marker.audioUri, marker.dBFS)}
               >
                 <View style={{
-                  backgroundColor: marker.dB >= 20 ? '#ff0000' :  marker.dB >= 10 ? '#ff8f00': '#007bff',
+                  backgroundColor: marker.dBFS >= -28 ? '#ff0000' :  marker.dBFS >= -35 ? '#ff8f00': '#007bff',
                   borderRadius: 100,
                   borderWidth: 1,
                   width: 33,
                   height: 33, 
                 }}>
-                  <TabBarIcon name={marker.dB >= 20 ? 'volume-high' : marker.dB >= 10 ? 'volume-medium' : 'volume-low'} color={'white'}  />
+                  <TabBarIcon name={marker.dBFS >= -28 ? 'volume-high' : marker.dBFS >= -35 ? 'volume-medium' : 'volume-low'} color={'white'}  />
                 </View>
               </Marker>
           ))}
