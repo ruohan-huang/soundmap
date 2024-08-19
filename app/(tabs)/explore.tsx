@@ -25,7 +25,7 @@ export default function TabTwoScreen() {
         <ThemedText>
           The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
           sets up the tab navigator.
-        </ThemedText>
+        </ThemedText>    
         <ExternalLink href="https://docs.expo.dev/router/introduction">
           <ThemedText type="link">Learn more</ThemedText>
         </ExternalLink>
@@ -34,7 +34,7 @@ export default function TabTwoScreen() {
         <ThemedText>
           You can open this project on Android, iOS, and the web. To open the web version, press{' '}
           <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
+        </ThemedText>  
       </Collapsible>
       <Collapsible title="Images">
         <ThemedText>
@@ -80,7 +80,7 @@ export default function TabTwoScreen() {
             <ThemedText>
               The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
               component provides a parallax effect for the header image.
-            </ThemedText>
+        </ThemedText>
           ),
         })}
       </Collapsible>
