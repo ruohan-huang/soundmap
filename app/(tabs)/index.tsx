@@ -190,7 +190,7 @@ export default function HomeScreen() {
               </Marker>
           ))}
         </MapView>
-        <View style={{top: 360, right: -160}}>
+        <View style={{top: 320, right: -130}}>
           <TouchableOpacity
             style={{
             backgroundColor: '#007bff',
@@ -212,7 +212,7 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
         </View>
-        </View>
+      </View>
     </GestureHandlerRootView>
 
   );
