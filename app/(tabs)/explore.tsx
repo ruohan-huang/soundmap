@@ -18,27 +18,20 @@ export default function TabTwoScreen() {
         <ThemedText type="title">Explore</ThemedText>
       </ThemedView>
       <ThemedText>Welcome to our noise pollution map! Click below to get started!</ThemedText>
-      <Collapsible title="Context and Introduction">
+      <Collapsible title="What is sound pollution?">
         <ThemedText>
-          The world is becoming more urbanized since the industrial revolution. Living in an urbanized world, you can hear noises,
-          known as sound pollution, in many places. These noises, despite being seemingly harmless, can have a 
-          major impact on people's health and well-being. 
+          Living in an increasingly urbanized world, you can hear noises almost everywhere. These noises, known as sound pollution, seem harmless but can have a major impact on health and well-being.
         </ThemedText>
       </Collapsible>
-      <Collapsible title="Why bother the sound level?">
+      <Collapsible title="Why is it so important?">
         <ThemedText>
-          How can one bear having insomnia from traffic noises? Sound can contribute to one's daily life, including work, 
-          sleep, relaxation, and everything else. Combined, these affected aspects can lead to a bad mood. Moreover, noise 
-          can cause a variety of health problems, including hearing loss and cardiovascular problems. Knowing the effects of
-          noise, we created a map where one can see the noise level in everywhere.  
+          Have you ever stayed in an urban area and couldn't fall asleep at night because of the noises outside? Sound contributes to many aspects of daily life, including study, work, and sleep, but too much sound can cause a variety of problems, including insomnia, high blood pressure, and cardiovascular problems, not to mention bad moods.
         </ThemedText>    
         <Image source={require('@/assets/images/jackhammer.png')} style={{ alignSelf: 'center', width: 300, height: 200, marginTop: 10, borderRadius: 10}} />
       </Collapsible>
       <Collapsible title="Our Mission">
         <ThemedText>
-          Our goal is to provide people with a map of different noise pollution levels. Thanks to our thoughtful member
-          Ruohan Huang, this idea is brought into our awareness. Using this novel tool, people (especially
-          those sensitive to sound) will be able to know their surroundings, whether at home, moving, or travelling. 
+          Knowing the true impact of sound, we created a map that predicts noise levels in areas around the world. This map can help people who are sensitive or vulnerable to loud sounds determine things like the best places to live. Our goal is to provide an easy, accessible, and visual way to find (and avoid, if applicable) noise "hotspots."
         </ThemedText>  
       </Collapsible>
       <Collapsible title="App Functionalities">
