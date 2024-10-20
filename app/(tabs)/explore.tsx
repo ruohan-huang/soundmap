@@ -20,7 +20,7 @@ export default function TabTwoScreen() {
       <ThemedText>Welcome to Soundmap! Click below to learn more about this app.</ThemedText>
       <Collapsible title="What is noise pollution?">
         <ThemedText>
-          Living in an increasingly urbanized world, you can hear sounds almost everywhere. These sounds, known as noises pollution, seem harmless but can have a major impact on health and well-being.
+          Living in an increasingly urbanized world, you can hear sounds almost everywhere. These sounds, known as noise pollution, seem harmless but can have a major impact on health and well-being.
         </ThemedText>
       </Collapsible>
       <Collapsible title="Why is it so important?">
