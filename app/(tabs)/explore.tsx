@@ -36,7 +36,8 @@ export default function TabTwoScreen() {
       </Collapsible>
       <Collapsible title="App Functionalities">
         <ThemedText>
-        This app uses crowdsourced data!  Click on {' \n'}
+        We use OpenStreetMap data to predict sound levels from infrastructural density (buildings and roads).
+        And this app uses crowdsourced data! To give other users more information about the sounds in your area, step outside and click {' \n'}
           <View
             style={{
             backgroundColor: '#007bff',
@@ -56,8 +57,7 @@ export default function TabTwoScreen() {
               style={{fontSize: 30 }}
             />
           </View>
-          {' '} to record the noise around you. You must give us access to your location and microphone! Once recorded, 
-          people can hear your recording. Click on any {' '}
+          {' '} to record the noise around you. Please allow access to your location and microphone. Once recorded, other users can hear your recording. Click on any {' '}
           <View style={{
                   backgroundColor: '#007bff',
                   borderRadius: 100,
@@ -70,12 +70,12 @@ export default function TabTwoScreen() {
           {' '} to hear the recording!
         </ThemedText>
       </Collapsible>
-      <Collapsible title="Conclusion">
+      {/* <Collapsible title="Conclusion">
         <ThemedText>
           We hope that our tool will help you, whether sensitive to noise or not. In the end, we wish you would enjoy 
           your current environment or find a more suitable one. Good luck!
         </ThemedText>
-      </Collapsible>
+      </Collapsible> */}
       <Collapsible title="Works Cited">
         <ThemedText>
         Parris, Josh. jackhammer. Encyclopædia Britannica, Encyclopædia Britannica, https://www.britannica.com/science/noise-pollution/images-videos#/media/1/417205/128720. Accessed 8 Aug. 2024. 
