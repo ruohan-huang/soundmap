@@ -20,12 +20,12 @@ export default function TabTwoScreen() {
       <ThemedText>Welcome to our noise pollution map! Click below to get started!</ThemedText>
       <Collapsible title="What is sound pollution?">
         <ThemedText>
-          Living in an increasingly urbanized world, you can hear noises almost everywhere. These noises, known as sound pollution, seem harmless but can have a major impact on health and well-being.
+          Living in an increasingly urbanized world, you can hear sounds almost everywhere. These sounds, known as noises pollution, seem harmless but can have a major impact on health and well-being.
         </ThemedText>
       </Collapsible>
       <Collapsible title="Why is it so important?">
         <ThemedText>
-          Have you ever stayed in an urban area and couldn't fall asleep at night because of the noises outside? Sound contributes to many aspects of daily life, including study, work, and sleep, but too much sound can cause a variety of problems, including insomnia, high blood pressure, and cardiovascular problems, not to mention bad moods.
+          Have you ever stayed in an urban area and couldn't fall asleep at night because of the sounds outside? Sound contributes to many aspects of daily life, including study, work, and sleep, but too much sound can cause a variety of problems, including insomnia, high blood pressure, and cardiovascular problems, not to mention bad moods.
         </ThemedText>    
         <Image source={require('@/assets/images/jackhammer.png')} style={{ alignSelf: 'center', width: 300, height: 200, marginTop: 10, borderRadius: 10}} />
       </Collapsible>
