@@ -17,8 +17,8 @@ export default function TabTwoScreen() {
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Explore</ThemedText>
       </ThemedView>
-      <ThemedText>Welcome to our noise pollution map! Click below to get started!</ThemedText>
-      <Collapsible title="What is sound pollution?">
+      <ThemedText>Welcome to Soundmap! Click below to learn more about this app.</ThemedText>
+      <Collapsible title="What is noise pollution?">
         <ThemedText>
           Living in an increasingly urbanized world, you can hear sounds almost everywhere. These sounds, known as noises pollution, seem harmless but can have a major impact on health and well-being.
         </ThemedText>
