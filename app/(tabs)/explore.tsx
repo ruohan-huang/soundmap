@@ -37,7 +37,7 @@ export default function TabTwoScreen() {
       <Collapsible title="App Functionalities">
         <ThemedText>
         We use OpenStreetMap data to predict sound levels from infrastructural density (buildings and roads).
-        And this app uses crowdsourced data! To give other users more information about the sounds in your area, step outside and click {' \n'}
+        But this app also uses crowdsourced data! To give other users more qualitative information about the sounds in your area, step outside and click {' \n'}
           <View
             style={{
             backgroundColor: '#007bff',
