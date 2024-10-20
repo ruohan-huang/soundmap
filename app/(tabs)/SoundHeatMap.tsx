@@ -10,7 +10,7 @@ type WeightedLatLng = LatLng & {
 
 // FETCH OSM INFRASTRUCTURE DATA (BUILDINGS AND HIGHWAYS)---------------------------------------------------------------------
 
-async function fetchOSMData(centerPoint: number[] | [any, any], radius: number) {
+export async function fetchOSMData(centerPoint: number[] | [any, any], radius: number) {
     const [lat, lon] = centerPoint;
     const query = `
         [out:json];
@@ -39,7 +39,7 @@ async function fetchOSMData(centerPoint: number[] | [any, any], radius: number) 
 
 // PREDICT SOUND LEVEL FROM DENSITY -----------------------------------------------------------------------------------------
 
-function predictSoundLevel(osmData: { elements: any[]; }) {
+export function predictSoundLevel(osmData: { elements: any[]; }) {
     let roadCount = 0;
     let buildingCount = 0;
 
@@ -66,6 +66,7 @@ const SoundHeatMap: React.FC = () => {
         const data = await fetchOSMData(centerPoint, radius);
         const predictedSoundLevel = predictSoundLevel(data);
 
+        console.log(data);
         console.log(predictedSoundLevel);
         
         // add heatmap datapoint w/ predicted sound level
@@ -73,7 +74,6 @@ const SoundHeatMap: React.FC = () => {
         ...prevData,
         { latitude: centerPoint[0], longitude: centerPoint[1], weight: predictedSoundLevel }
         ]);
-        console.log(heatMapData);
     };
   
     useEffect(() => {
@@ -82,7 +82,13 @@ const SoundHeatMap: React.FC = () => {
           const radius = 1000; // meters
           await fetchAndPredictSoundLevels(centerPoint, radius);
         }
+
+        fetch();
     }, []);
+
+    useEffect(() => {
+      console.log("Heat Map Updated", heatMapData);
+    }, [heatMapData]);
   
     return (
       <View style={{ flex: 1 }}>

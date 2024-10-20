@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { StyleSheet, View, Text, Button, Alert, Image } from 'react-native';
-import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
+import MapView, { Marker, MapPressEvent, Region, Heatmap, LatLng } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Audio } from 'expo-av';
 import { TouchableOpacity, GestureHandlerRootView} from 'react-native-gesture-handler';
 import { AndroidAudioEncoder, AndroidOutputFormat, IOSAudioQuality, IOSOutputFormat, RecordingOptionsPresets } from 'expo-av/build/Audio';
 
+// Heatmap
+import { predictSoundLevel, fetchOSMData } from './SoundHeatMap';
 
+type WeightedLatLng = LatLng & {
+  weight?: number;
+};
 
 type AudioMarker = {
   coordinate: {
@@ -23,6 +28,10 @@ export default function HomeScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [markers, setMarkers] = useState<AudioMarker[]>([]);
   const [coordinate, setCoordinate] = useState<{latitude: number, longitude: number}>({latitude: -1, longitude: -1});
+
+  // Heatmap
+  const [heatMapData, setHeatMapData] = useState<WeightedLatLng[]>([]);
+
   let pressed = false;
   useEffect(() => {
     (async () => {
@@ -40,6 +49,21 @@ export default function HomeScreen() {
         longitudeDelta: 0.0421,
       });
     })();
+  }, []);
+
+  const fetchAndPredictSoundLevels = async (centerPoint: [number, number], radius: number) => {
+    const data = await fetchOSMData(centerPoint, radius);
+    const predictedSoundLevel = predictSoundLevel(data);
+    setHeatMapData(prevData => [
+      ...prevData,
+      { latitude: centerPoint[0], longitude: centerPoint[1], weight: predictedSoundLevel },
+    ]);
+  };
+
+  useEffect(() => {
+    const centerPoint: [number, number] = [47.608013, -122.335167]; // Seattle coordinates
+    const radius = 1000; // 1km radius
+    fetchAndPredictSoundLevels(centerPoint, radius);
   }, []);
 
 
@@ -189,6 +213,18 @@ export default function HomeScreen() {
                 </View>
               </Marker>
           ))}
+
+          {/* Render heatmap points */}
+          <Heatmap
+            points={[{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]}
+            radius={50}
+            opacity={0.7}
+            gradient={{
+              colors: ['green', 'yellow', 'orange', 'red'],
+              startPoints: [0.01, 0.25, 0.5, 1],
+              colorMapSize: 200,
+            }}
+          />
         </MapView>
         <View style={{top: 320, right: -130}}>
           <TouchableOpacity
