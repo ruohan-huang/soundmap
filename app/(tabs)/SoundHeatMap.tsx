@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
-import MapView, { Heatmap } from 'react-native-maps';
+import MapView, { Heatmap, LatLng } from 'react-native-maps';
 import axios from 'axios';
+
+type WeightedLatLng = LatLng & {
+  weight?: number;
+};
 
 
 // FETCH OSM INFRASTRUCTURE DATA (BUILDINGS AND HIGHWAYS)---------------------------------------------------------------------
@@ -25,12 +29,12 @@ async function fetchOSMData(centerPoint: number[] | [any, any], radius: number) 
 
 // test
 
-const centerPoint = [47.608013, -122.335167]; // (Seattle)
-const radius = 1000; // meters
+// const centerPoint = [47.608013, -122.335167]; // (Seattle)
+// const radius = 1000; // meters
 
-fetchOSMData(centerPoint, radius).then(data => {
-    console.log(data); // OSM data within specified radius
-});
+// fetchOSMData(centerPoint, radius).then(data => {
+//     console.log(data); // OSM data within specified radius
+// });
 
 
 // PREDICT SOUND LEVEL FROM DENSITY -----------------------------------------------------------------------------------------
@@ -47,7 +51,7 @@ function predictSoundLevel(osmData: { elements: any[]; }) {
     }
     });
 
-    const soundLevel = (roadCount * 5) + (buildingCount * 2); // weights of certain infrastructures
+    const soundLevel = ((roadCount * 5) + (buildingCount * 2)) / 1000; // weights of certain infrastructures
     return soundLevel;
 }
 
@@ -55,24 +59,29 @@ function predictSoundLevel(osmData: { elements: any[]; }) {
 // CREATE HEAT MAP ----------------------------------------------------------------------------------------------------------
 
 const SoundHeatMap: React.FC = () => {
-    const [heatMapData, setHeatMapData] = useState<{latitude: number, longitude: number, weight: number}[]>([]);
+    const [heatMapData, setHeatMapData] = useState<WeightedLatLng[]>([]);
 
     // fetch + predict sound levels
     const fetchAndPredictSoundLevels = async (centerPoint: [number, number], radius: number) => {
         const data = await fetchOSMData(centerPoint, radius);
         const predictedSoundLevel = predictSoundLevel(data);
+
+        console.log(predictedSoundLevel);
         
         // add heatmap datapoint w/ predicted sound level
         setHeatMapData(prevData => [
         ...prevData,
         { latitude: centerPoint[0], longitude: centerPoint[1], weight: predictedSoundLevel }
         ]);
+        console.log(heatMapData);
     };
   
     useEffect(() => {
-        const centerPoint: [number, number] = [47.608013, -122.335167]; // (Seattle)
-        const radius = 1000; // meters
-        fetchAndPredictSoundLevels(centerPoint, radius);
+        const fetch = async () => {
+          const centerPoint: [number, number] = [47.608013, -122.335167]; // (Seattle)
+          const radius = 1000; // meters
+          await fetchAndPredictSoundLevels(centerPoint, radius);
+        }
     }, []);
   
     return (
@@ -87,7 +96,7 @@ const SoundHeatMap: React.FC = () => {
           }}
         >
           <Heatmap
-            points={heatMapData}
+            points={heatMapData} // test: [{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]
             radius={50}
             opacity={0.7}
             gradient={{

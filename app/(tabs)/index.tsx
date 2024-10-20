@@ -9,7 +9,6 @@ import { AndroidAudioEncoder, AndroidOutputFormat, IOSAudioQuality, IOSOutputFor
 
 
 
-
 type AudioMarker = {
   coordinate: {
     latitude: number;
@@ -164,6 +163,7 @@ export default function HomeScreen() {
     <GestureHandlerRootView>
       <View style={styles.container}>
         <MapView
+          // provider={'google'} // changed - error now
           style={styles.map}
           region={region}
           showsUserLocation={true}
