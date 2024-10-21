@@ -55,12 +55,14 @@ export default function HomeScreen() {
 
   // GET DISTANCE AND DIVISIONS -----------------------------------------------------------------------------------------------------
 
-  async function getMapSize() {
+  async function getMapDimensions() {
     var bounds = await myMap.current?.getMapBoundaries();
     var topRight = bounds?.northEast; // LatLng of top right corner of map
     var bottomLeft = bounds?.southWest; // LatLng of bottom left corner of map
-    var topLeft = {latitude: topRight?.latitude, longitude: bottomLeft?.longitude}; // etc.
-    var bottomRight = {latitude: bottomLeft?.latitude, longitude: topRight?.longitude};
+    // var topLeft = {latitude: topRight?.latitude, longitude: bottomLeft?.longitude};
+    // var bottomRight = {latitude: bottomLeft?.latitude, longitude: topRight?.longitude};
+
+    return [distanceBetweenLatitudes(topRight?.latitude, bottomLeft?.latitude), distanceBetweenLongitudes(topRight?.longitude, bottomLeft?.longitude)];
   }
 
   function distanceBetweenLatitudes(lat1: number, lat2: number) {
