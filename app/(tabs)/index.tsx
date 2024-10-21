@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { StyleSheet, View, Text, Button, Alert, Image } from 'react-native';
 import MapView, { Marker, MapPressEvent, Region, Heatmap, LatLng } from 'react-native-maps';
@@ -29,8 +29,9 @@ export default function HomeScreen() {
   const [markers, setMarkers] = useState<AudioMarker[]>([]);
   const [coordinate, setCoordinate] = useState<{latitude: number, longitude: number}>({latitude: -1, longitude: -1});
 
-  // Heatmap
+  // Heatmap variables
   const [heatMapData, setHeatMapData] = useState<WeightedLatLng[]>([]);
+  const myMap = useRef<MapView>(null);
 
   let pressed = false;
   useEffect(() => {
@@ -51,14 +52,103 @@ export default function HomeScreen() {
     })();
   }, []);
 
+
+  // GET DISTANCE AND DIVISIONS -----------------------------------------------------------------------------------------------------
+
+  async function getMapSize() {
+    var bounds = await myMap.current?.getMapBoundaries();
+    var topRight = bounds?.northEast; // LatLng of top right corner of map
+    var bottomLeft = bounds?.southWest; // LatLng of bottom left corner of map
+    var topLeft = {latitude: topRight?.latitude, longitude: bottomLeft?.longitude}; // etc.
+    var bottomRight = {latitude: bottomLeft?.latitude, longitude: topRight?.longitude};
+  }
+
+  function distanceBetweenLatitudes(lat1: number, lat2: number) {
+    const earthRadius = 6371; // Earth's radius in kilometers
+    const deltaLat = Math.abs(lat2 - lat1); // Difference in latitude in degrees
+
+    // Convert deltaLat to radians
+    const deltaLatRad = deltaLat * (Math.PI / 180);
+
+    // Calculate distance
+    const distance = earthRadius * deltaLatRad;
+    return distance;
+  }
+
+  function distanceBetweenLongitudes(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const earthRadius = 6371; // Earth's radius in kilometers
+    const deltaLon = Math.abs(lon2 - lon1); // Difference in latitude in degrees
+
+    // Convert deltaLat to radians
+    const deltaLonRad = deltaLon * (Math.PI / 180);
+
+    // Calculate distance
+    const distance = earthRadius * Math.cos(distanceBetweenLatitudes(lat1, lat2) * (Math.PI / 180)) * deltaLonRad;
+    return distance;
+  }
+
+  function divideLatitudes(lat1: number, lat2: number, numParts: number) {
+    const deltaLat = Math.abs(lat2 - lat1); // difference in latitudes
+    const stepSize = deltaLat / numParts; // step size for each part
+    const latitudes = [];
+  
+    for (let i = 0; i <= numParts; i++) {
+      // calculate latitude at each step
+      const newLat = lat1 + i * stepSize;
+      latitudes.push(newLat);
+    }
+  
+    return latitudes;
+  }
+
+  function divideLongitudes(lon1: number, lon2: number, lat: number, numParts: number) {
+    const earthRadius = 6371; // Earth's radius in kilometers
+
+    // Convert latitude to radians
+    const latRad = lat * (Math.PI / 180);
+
+    // Calculate the distance between longitudes using the formula:
+    // distance = radius * cos(latitude) * difference in longitude
+    const deltaLon = Math.abs(lon2 - lon1); // difference in longitude in degrees
+    const stepSize = deltaLon / numParts; // step size for each part
+    const longitudes = [];
+  
+    for (let i = 0; i <= numParts; i++) {
+      // Calculate the longitude at each step
+      const newLon = lon1 + i * stepSize;
+      longitudes.push(newLon);
+    }
+  
+    return longitudes;
+  }
+
+
+//   function getHaversineDistance(point1: LatLng, point2: LatLng): number {
+//     const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+
+//     const R = 6371; // radius of the Earth in kilometers
+//     const dLat = toRadians(point2.latitude - point1.latitude);
+//     const dLng = toRadians(point2.longitude - point1.longitude);
+//     const a =
+//         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+//         Math.cos(toRadians(point1.latitude)) * Math.cos(toRadians(point2.latitude)) *
+//         Math.sin(dLng / 2) * Math.sin(dLng / 2);
+//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+//     return R * c; // distance in kilometers
+// }
+
+
   const fetchAndPredictSoundLevels = async (centerPoint: [number, number], radius: number) => {
     const data = await fetchOSMData(centerPoint, radius);
     const predictedSoundLevel = predictSoundLevel(data);
     setHeatMapData(prevData => [
       ...prevData,
       { latitude: centerPoint[0], longitude: centerPoint[1], weight: predictedSoundLevel },
+      
     ]);
   };
+
 
   useEffect(() => {
     const centerPoint: [number, number] = [47.608013, -122.335167]; // Seattle coordinates
@@ -97,7 +187,9 @@ export default function HomeScreen() {
     });
   };
 
- 
+
+// RECORDING ---------------------------------------------------------------------------------------------------------------
+
   const startRecording = async (coordinate: { latitude: number; longitude: number }) => {
     try {
       const permission = await Audio.requestPermissionsAsync();
@@ -194,6 +286,7 @@ export default function HomeScreen() {
           showsBuildings={true}
           onRegionChangeComplete={onRegionChangeComplete}
           onUserLocationChange={handleUserLocationUpdate}
+          ref={myMap}
           //onPress={handleMapPress}
         >
           {markers.map((marker, index) => (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import MapView, { Heatmap, LatLng } from 'react-native-maps';
 import axios from 'axios';
@@ -26,6 +26,7 @@ export async function fetchOSMData(centerPoint: number[] | [any, any], radius: n
     const response = await axios.get(url);
     return response.data;
 }
+
 
 // test
 
