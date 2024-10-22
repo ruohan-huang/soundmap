@@ -42,7 +42,7 @@ export default function HomeScreen() {
         return;
       }
       let location = await Location.getCurrentPositionAsync({});
-      //console.log(location);
+      console.log(location);
       setRegion({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
@@ -53,60 +53,75 @@ export default function HomeScreen() {
   }, []);
 
 
-  // GET DISTANCE AND DIVISIONS -----------------------------------------------------------------------------------------------------
+  // GET HEATMAP -----------------------------------------------------------------------------------------------------
 
-  async function getMapDimensions() {
+  async function renderHeatMap() {
+    console.log("rendering");
+    const dividedMap = await getDividedMap();
+    console.log(`dividedMap: ${JSON.stringify(dividedMap)}`);
+    const tempData = await fetchOSMData(dividedMap.latArray, dividedMap.lonArray, 1000);
+    if (tempData) {
+      console.log(tempData);
+      setHeatMapData(tempData);
+    }
+  }
+
+  async function getDividedMap() {
+    // console.log(myMap.current);
     var bounds = await myMap.current?.getMapBoundaries();
+    console.log(bounds);
     var topRight = bounds?.northEast; // LatLng of top right corner of map
     var bottomLeft = bounds?.southWest; // LatLng of bottom left corner of map
 
     var trLat: number = topRight?.latitude || 0;
     var trLon: number = topRight?.longitude || 0;
     var blLat: number = bottomLeft?.latitude || 0;
-    var blLon: number = bottomLeft?.latitude || 0;
+    var blLon: number = bottomLeft?.longitude || 0;
 
-    return [distanceBetweenLatitudes(trLat, blLat), distanceBetweenLongitudes(trLat, trLon, blLat, blLon)];
+    console.log("bounds: [", trLat, ", ", trLon, "], [", blLat, ", ", blLon, "]");
+
+    // return [getDividedLatitudes(trLat, blLat, 0.5), getDividedLongitudes(trLon, blLon, Math.abs(trLat - blLat) / 2, 0.5)];
+    return {latArray: getDividedLatitudes(trLat, blLat, 0.5), lonArray: getDividedLongitudes(trLon, blLon, Math.abs(trLat - blLat) / 2, 0.5)};
   }
 
-  function distanceBetweenLatitudes(lat1: number, lat2: number) {
-    const earthRadius = 6371; // Earth's radius in kilometers
-    const deltaLat = Math.abs(lat2 - lat1); // Difference in latitude in degrees
+  // function distanceBetweenLatitudes(lat1: number, lat2: number) {
+  //   const earthRadius = 6371; // Earth's radius in kilometers
+  //   const deltaLat = Math.abs(lat2 - lat1); // Difference in latitude in degrees
 
-    // Convert deltaLat to radians
-    const deltaLatRad = deltaLat * (Math.PI / 180);
+  //   // Convert deltaLat to radians
+  //   const deltaLatRad = deltaLat * (Math.PI / 180);
 
-    // Calculate distance
-    const distance = earthRadius * deltaLatRad;
-    return distance;
-  }
+  //   // Calculate distance
+  //   const distance = earthRadius * deltaLatRad;
+  //   return distance;
+  // }
 
-  function distanceBetweenLongitudes(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const earthRadius = 6371; // Earth's radius in kilometers
-    const deltaLon = Math.abs(lon2 - lon1); // Difference in latitude in degrees
+  // function distanceBetweenLongitudes(lat1: number, lon1: number, lat2: number, lon2: number) {
+  //   const earthRadius = 6371; // Earth's radius in kilometers
+  //   const deltaLon = Math.abs(lon2 - lon1); // Difference in latitude in degrees
 
-    // Convert deltaLat to radians
-    const deltaLonRad = deltaLon * (Math.PI / 180);
+  //   // Convert deltaLat to radians
+  //   const deltaLonRad = deltaLon * (Math.PI / 180);
 
-    // Calculate distance
-    const distance = earthRadius * Math.cos(distanceBetweenLatitudes(lat1, lat2) * (Math.PI / 180)) * deltaLonRad;
-    return distance;
-  }
+  //   // Calculate distance
+  //   const distance = earthRadius * Math.cos(distanceBetweenLatitudes(lat1, lat2) * (Math.PI / 180)) * deltaLonRad;
+  //   return distance;
+  // }
 
-  function divideLatitudes(lat1: number, lat2: number, numParts: number) {
+  function getDividedLatitudes(lat1: number, lat2: number, stepSize: number) {
     const deltaLat = Math.abs(lat2 - lat1); // difference in latitudes
-    const stepSize = deltaLat / numParts; // step size for each part
     const latitudes = [];
   
-    for (let i = 0; i <= numParts; i++) {
+    for (let i = 0; i <= deltaLat / stepSize; i++) {
       // calculate latitude at each step
       const newLat = lat1 + i * stepSize;
       latitudes.push(newLat);
     }
-  
+
     return latitudes;
   }
 
-  function divideLongitudes(lon1: number, lon2: number, lat: number, numParts: number) {
+  function getDividedLongitudes(lon1: number, lon2: number, lat: number, stepSize: number) {
     const earthRadius = 6371; // Earth's radius in kilometers
 
     // Convert latitude to radians
@@ -115,10 +130,10 @@ export default function HomeScreen() {
     // Calculate the distance between longitudes using the formula:
     // distance = radius * cos(latitude) * difference in longitude
     const deltaLon = Math.abs(lon2 - lon1); // difference in longitude in degrees
-    const stepSize = deltaLon / numParts; // step size for each part
     const longitudes = [];
   
-    for (let i = 0; i <= numParts; i++) {
+    for (let i = 0; i <= deltaLon / stepSize; i++) {
+      // console.log(i);
       // Calculate the longitude at each step
       const newLon = lon1 + i * stepSize;
       longitudes.push(newLon);
@@ -143,7 +158,8 @@ export default function HomeScreen() {
 
 
   const onRegionChangeComplete = (newRegion: Region) => {
-    setRegion(newRegion);
+    // setRegion(newRegion);
+    renderHeatMap();
   };
 
   const handleButtonPress = async () => {
@@ -272,6 +288,7 @@ export default function HomeScreen() {
           onRegionChangeComplete={onRegionChangeComplete}
           onUserLocationChange={handleUserLocationUpdate}
           ref={myMap}
+          // onDoublePress={renderHeatMap}
           //onPress={handleMapPress}
         >
           {markers.map((marker, index) => (
@@ -294,7 +311,7 @@ export default function HomeScreen() {
 
           {/* Render heatmap points */}
           <Heatmap
-            points={[{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]}
+            points={heatMapData.length !== 0 ? heatMapData : [{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]}
             radius={50}
             opacity={0.7}
             gradient={{

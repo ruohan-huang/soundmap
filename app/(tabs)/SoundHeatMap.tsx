@@ -27,34 +27,37 @@ type WeightedLatLng = LatLng & {
 //     return response.data;
 // }
 
-fetchOSMData([47.608013], [-122.335167], 1000);
+// fetchOSMData([47.608013], [-122.335167], 1000);
 
 export async function fetchOSMData(latitudes: number[], longitudes: number[], radius: number) {
   var dataPoints: WeightedLatLng[] = [];
+  let query = `[out:json];`
   for (var i = 0; i < latitudes.length; i++) {
     for (var k = 0; k < longitudes.length; k++) {
-      const query = `
-        [out:csv(::type,::count)];
-
-        way(around:${radius}, ${i}, ${k})["building"];
+      query += `
+        way(around:${radius}, ${latitudes[i]}, ${longitudes[k]})["building"];
         out count;
-
-        way(around:${radius}, ${i}, ${k})["highway"];
+        way(around:${radius}, ${latitudes[i]}, ${longitudes[k]})["highway"];
         out count;
-      `
-      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-      const response = await axios.get(url);
-      console.log(response.data);
-      const newWeightedLatLng: WeightedLatLng = {
-        latitude: i,
-        longitude: k,
-        weight: predictSoundLevel(response.data.buildingCount, response.data.highway)
-      }
-      dataPoints.push(newWeightedLatLng);
-
-      return(dataPoints);
+      `;
     }
   }
+  const url = `https://overpass-api.de/api/interpreter`;
+  const response = await axios.post(url, query);
+  const result = response.data.elements;
+  console.log(JSON.stringify(response.data));
+  for (var i = 0; i < latitudes.length; i++) {
+    for (var k = 0; k < longitudes.length; k++) {
+      const index = i * longitudes.length + k;
+      const newWeightedLatLng: WeightedLatLng = {
+        latitude: latitudes[i],
+        longitude: longitudes[k],
+        weight: predictSoundLevel(result[index * 2].tags.total, response.data.elements[index * 2 + 1].tags.total)
+      }
+      dataPoints.push(newWeightedLatLng);
+    }
+  }
+  return(dataPoints);
 }
 
 // test
@@ -70,9 +73,9 @@ export async function fetchOSMData(latitudes: number[], longitudes: number[], ra
 // PREDICT SOUND LEVEL FROM DENSITY -----------------------------------------------------------------------------------------
 
 export function predictSoundLevel(roadCount: number, buildingCount: number) {
-    var soundLevel = ((roadCount * 5) + (buildingCount * 2)) / 1000; // more weight for roads
-    if (soundLevel <= 35) {
-      soundLevel = 35;
+    var soundLevel = ((roadCount * 5) + (buildingCount * 2)) / 15; // more weight for roads
+    if (soundLevel <= 1) {
+      soundLevel = 1;
     }
     return soundLevel;
 }
@@ -124,7 +127,7 @@ const SoundHeatMap: React.FC = () => {
           }}
         >
           <Heatmap
-            points={heatMapData} // test: [{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]
+            points={[{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]} // test: [{ latitude: 47.608013, longitude: -122.335167, weight: 35 }, { latitude: 47, longitude: -122.335167, weight: 20 }]
             radius={50}
             opacity={0.7}
             gradient={{
