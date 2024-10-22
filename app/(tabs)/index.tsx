@@ -59,10 +59,13 @@ export default function HomeScreen() {
     var bounds = await myMap.current?.getMapBoundaries();
     var topRight = bounds?.northEast; // LatLng of top right corner of map
     var bottomLeft = bounds?.southWest; // LatLng of bottom left corner of map
-    // var topLeft = {latitude: topRight?.latitude, longitude: bottomLeft?.longitude};
-    // var bottomRight = {latitude: bottomLeft?.latitude, longitude: topRight?.longitude};
 
-    return [distanceBetweenLatitudes(topRight?.latitude, bottomLeft?.latitude), distanceBetweenLongitudes(topRight?.longitude, bottomLeft?.longitude)];
+    var trLat: number = topRight?.latitude || 0;
+    var trLon: number = topRight?.longitude || 0;
+    var blLat: number = bottomLeft?.latitude || 0;
+    var blLon: number = bottomLeft?.latitude || 0;
+
+    return [distanceBetweenLatitudes(trLat, blLat), distanceBetweenLongitudes(trLat, trLon, blLat, blLon)];
   }
 
   function distanceBetweenLatitudes(lat1: number, lat2: number) {
@@ -124,39 +127,19 @@ export default function HomeScreen() {
     return longitudes;
   }
 
+  
 
-//   function getHaversineDistance(point1: LatLng, point2: LatLng): number {
-//     const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+  // const fetchAndPredictSoundLevels = async (latitudes: number[], longitudes: number[], radius: number) => {
+  //   const data = await fetchOSMData(latitudes, longitudes, radius);
+  //   return data;
+  // };
 
-//     const R = 6371; // radius of the Earth in kilometers
-//     const dLat = toRadians(point2.latitude - point1.latitude);
-//     const dLng = toRadians(point2.longitude - point1.longitude);
-//     const a =
-//         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-//         Math.cos(toRadians(point1.latitude)) * Math.cos(toRadians(point2.latitude)) *
-//         Math.sin(dLng / 2) * Math.sin(dLng / 2);
-//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-//     return R * c; // distance in kilometers
-// }
-
-
-  const fetchAndPredictSoundLevels = async (centerPoint: [number, number], radius: number) => {
-    const data = await fetchOSMData(centerPoint, radius);
-    const predictedSoundLevel = predictSoundLevel(data);
-    setHeatMapData(prevData => [
-      ...prevData,
-      { latitude: centerPoint[0], longitude: centerPoint[1], weight: predictedSoundLevel },
-      
-    ]);
-  };
-
-
-  useEffect(() => {
-    const centerPoint: [number, number] = [47.608013, -122.335167]; // Seattle coordinates
-    const radius = 1000; // 1km radius
-    fetchAndPredictSoundLevels(centerPoint, radius);
-  }, []);
+  
+  // useEffect(() => {
+  //   const centerPoint: [number, number] = [47.608013, -122.335167]; // Seattle coordinates
+  //   const radius = 1000; // 1km radius
+  //   // fetchAndPredictSoundLevels(centerPoint, radius);
+  // }, []);
 
 
   const onRegionChangeComplete = (newRegion: Region) => {
