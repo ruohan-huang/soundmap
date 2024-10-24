@@ -39,9 +39,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="SoundHeatMap"
+        name="SoundHeatmap"
         options={{
-          title: "SoundHeatMap",
+          title: "SoundHeatmap",
           href: null,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon

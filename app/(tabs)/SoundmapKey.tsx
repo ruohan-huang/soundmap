@@ -24,19 +24,19 @@ const SoundmapKey: React.FC = () => {
                 <View style={styles.keyContent}>
                     <View style={styles.colorBlockRow}>
                         <View style={[styles.colorBlock, { backgroundColor: 'red' }]} />
-                        <Text style={styles.text}>80+ dB</Text>
+                        <Text style={styles.text}>70+ dB</Text>
                     </View>
                     <View style={styles.colorBlockRow}>
                         <View style={[styles.colorBlock, { backgroundColor: 'orange' }]} />
-                        <Text style={styles.text}>65-79 dB</Text>
+                        <Text style={styles.text}>55-69 dB</Text>
                     </View>
                     <View style={styles.colorBlockRow}>
                         <View style={[styles.colorBlock, { backgroundColor: 'yellow' }]} />
-                        <Text style={styles.text}>50-64 dB</Text>
+                        <Text style={styles.text}>40-54 dB</Text>
                     </View>
                     <View style={styles.colorBlockRow}>
                         <View style={[styles.colorBlock, { backgroundColor: 'green' }]} />
-                        <Text style={styles.text}>10-49 dB</Text>
+                        <Text style={styles.text}>10-39 dB</Text>
                     </View>
                 </View>
             )}

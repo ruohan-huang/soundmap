@@ -305,7 +305,7 @@ export default function HomeScreen() {
                   { latitude: 47, longitude: -122.335167, weight: 20 },
                 ]
             }
-            radius={50}
+            radius={75}
             opacity={0.7}
             gradient={{
               colors: ['green', 'yellow', 'orange', 'red'],
