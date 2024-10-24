@@ -1,28 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import {
-  StyleSheet,
-  View,
-  Text,
-  Alert,
-  Platform,
-  TextInput,
-} from 'react-native';
-import MapView, {
-  Marker,
-  Region,
-  Heatmap,
-  LatLng,
-} from 'react-native-maps';
+import { StyleSheet, View, Text, Alert, Platform, TextInput } from 'react-native';
+import MapView, { Marker, Region, Heatmap, LatLng } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Audio } from 'expo-av';
 import { TouchableOpacity, GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-  RecordingOptionsPresets,
-} from 'expo-av/build/Audio';
+import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 
 // Heatmap
-import { predictSoundLevel, fetchOSMData } from './SoundHeatMap';
+import { fetchInfrastructure } from './SoundHeatmap';
+import SoundmapKey from './SoundmapKey';
+import { debounce } from 'lodash';
 
 type WeightedLatLng = LatLng & {
   weight?: number;
@@ -58,11 +46,11 @@ export default function HomeScreen() {
         setErrorMsg('Permission to access location was denied');
         return;
       }
-      let location = await Location.getCurrentPositionAsync({});
-      console.log(location);
+      // let location = await Location.getCurrentPositionAsync({});
+      // console.log(location);
       setRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: 47.608013,
+        longitude: -122.335167,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
       });
@@ -73,61 +61,25 @@ export default function HomeScreen() {
 
   async function renderHeatMap() {
     console.log('rendering');
-    const dividedMap = await getDividedMap();
-    console.log(`dividedMap: ${JSON.stringify(dividedMap)}`);
-    const tempData = await fetchOSMData(dividedMap.latArray, dividedMap.lonArray, 1000);
+
+    var boundaries = await myMap.current?.getMapBoundaries();
+    const newLatLng = {
+      latitude: 0,
+      longitude: 0,
+    }
+    var swBounds: LatLng = boundaries?.southWest || newLatLng;
+    var neBounds: LatLng = boundaries?.northEast || newLatLng;
+    console.log("rendering again");
+    const tempData = await fetchInfrastructure(swBounds, neBounds);
     if (tempData) {
-      console.log(tempData);
+      // console.log(tempData);
       setHeatMapData(tempData);
     }
   }
 
-  async function getDividedMap() {
-    var bounds = await myMap.current?.getMapBoundaries();
-    console.log(bounds);
-    var topRight = bounds?.northEast; // LatLng of top right corner of map
-    var bottomLeft = bounds?.southWest; // LatLng of bottom left corner of map
-
-    var trLat: number = topRight?.latitude || 0;
-    var trLon: number = topRight?.longitude || 0;
-    var blLat: number = bottomLeft?.latitude || 0;
-    var blLon: number = bottomLeft?.longitude || 0;
-
-    console.log('bounds: [', trLat, ', ', trLon, '], [', blLat, ', ', blLon, ']');
-
-    return {
-      latArray: getDividedLatitudes(trLat, blLat, 0.5),
-      lonArray: getDividedLongitudes(trLon, blLon, Math.abs(trLat - blLat) / 2, 0.5),
-    };
-  }
-
-  function getDividedLatitudes(lat1: number, lat2: number, stepSize: number) {
-    const deltaLat = Math.abs(lat2 - lat1); // difference in latitudes
-    const latitudes = [];
-
-    for (let i = 0; i <= deltaLat / stepSize; i++) {
-      // calculate latitude at each step
-      const newLat = lat1 + i * stepSize;
-      latitudes.push(newLat);
-    }
-
-    return latitudes;
-  }
-
-  function getDividedLongitudes(lon1: number, lon2: number, lat: number, stepSize: number) {
-    const deltaLon = Math.abs(lon2 - lon1); // difference in longitude in degrees
-    const longitudes = [];
-
-    for (let i = 0; i <= deltaLon / stepSize; i++) {
-      // Calculate the longitude at each step
-      const newLon = lon1 + i * stepSize;
-      longitudes.push(newLon);
-    }
-
-    return longitudes;
-  }
 
   const onRegionChangeComplete = (newRegion: Region) => {
+    // debounce(renderHeatMap, 300);
     renderHeatMap();
   };
 
@@ -297,9 +249,11 @@ export default function HomeScreen() {
         <MapView
           style={styles.map}
           region={region}
+          showsScale={true}
           showsUserLocation={true}
           showsBuildings={true}
           onRegionChangeComplete={onRegionChangeComplete}
+          showsPointsOfInterest={true}
           onUserLocationChange={handleUserLocationUpdate}
           ref={myMap}
         >
@@ -360,6 +314,7 @@ export default function HomeScreen() {
             }}
           />
         </MapView>
+        <SoundmapKey />
         <View style={{ position: 'absolute', bottom: 20, right: 20 }}>
           <TouchableOpacity
             style={{

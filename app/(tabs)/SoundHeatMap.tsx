@@ -10,71 +10,86 @@ type WeightedLatLng = LatLng & {
 
 // FETCH OSM INFRASTRUCTURE DATA (BUILDINGS AND HIGHWAYS)---------------------------------------------------------------------
 
-// export async function fetchOSMData(centerPoint: number[] | [any, any], radius: number) {
-//     const [lat, lon] = centerPoint;
-//     const query = `
-//         [out:json];
-//         (
-//             way(around:${radius}, ${lat}, ${lon})["highway"];
-//             way(around:${radius}, ${lat}, ${lon})["building"];
-//         );
-//         out body;
-//         >;
-//         out skel qt;
-//     `;
-//     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-//     const response = await axios.get(url);
-//     return response.data;
-// }
+export var queriedBuildings: {[key: string] : number} = {};
 
-// fetchOSMData([47.608013], [-122.335167], 1000);
-
-export async function fetchOSMData(
-  latitudes: number[],
-  longitudes: number[],
-  radius: number,
-) {
-  var dataPoints: WeightedLatLng[] = [];
-  let query = `[out:json];`;
-  for (var i = 0; i < latitudes.length; i++) {
-    for (var k = 0; k < longitudes.length; k++) {
-      query += `
-        way(around:${radius}, ${latitudes[i]}, ${longitudes[k]})["building"];
-        out count;
-        way(around:${radius}, ${latitudes[i]}, ${longitudes[k]})["highway"];
-        out count;
-      `;
-    }
-  }
-  const url = `https://overpass-api.de/api/interpreter`;
-  const response = await axios.post(url, query);
-  const result = response.data.elements;
-  console.log(JSON.stringify(response.data));
-  for (var i = 0; i < latitudes.length; i++) {
-    for (var k = 0; k < longitudes.length; k++) {
-      const index = i * longitudes.length + k;
-      const newWeightedLatLng: WeightedLatLng = {
-        latitude: latitudes[i],
-        longitude: longitudes[k],
-        weight: predictSoundLevel(
-          result[index * 2].tags.total,
-          response.data.elements[index * 2 + 1].tags.total,
-        ),
-      };
-      dataPoints.push(newWeightedLatLng);
-    }
-  }
-  return dataPoints;
+function makeDictKey(lat: number, lon: number): string {
+  return `${lat},${lon}`;
 }
 
-// test
+export async function fetchInfrastructure(northeastBounds: LatLng, southwestBounds: LatLng) {
+  let bounds = `${northeastBounds.latitude}, ${northeastBounds.longitude}, ${southwestBounds.latitude}, ${southwestBounds.longitude}`
+  let query = `
+    [out:json];
+    (
+      way["building"](${bounds});
+    );
+    out geom 100;
+  `;
 
-// const centerPoint = [47.608013, -122.335167]; // (Seattle)
-// const radius = 1000; // meters
+  // console.log(query);
 
-// fetchOSMData(centerPoint, radius).then(data => {
-//     console.log(data); // OSM data within specified radius
-// });
+  const url = `https://overpass-api.de/api/interpreter`;
+  const response = await axios.post(url, query);
+  const buildings = response.data.elements;
+  // console.log(JSON.stringify(buildings));
+  
+  let query2 = "[out:json];";
+  let newBuildings = [];
+
+  for (var i = 0; i < buildings.length; i++) {
+    let item = buildings[i];
+    let lat = item.bounds.minlat;
+    let lon = item.bounds.minlon;
+
+    if (!queriedBuildings[makeDictKey(lat, lon)]) {
+      newBuildings.push(buildings[i]);
+      query2 += `
+        (
+          way(around:100, ${lat}, ${lon})["highway"];
+          node(around:100, ${lat}, ${lon})["highway"];
+        );
+        out count;
+      `
+    }
+  }
+
+  // console.log(query2);
+
+  const response2 = await axios.post(url, query2);
+
+  // console.log(JSON.stringify(response2.data));
+
+  var dataPoints: WeightedLatLng[] = [];
+
+  let index = 0;
+  for (var b = 0; b < buildings.length; b++) {
+    const lat = buildings[b].bounds.minlat;
+    const lon = buildings[b].bounds.minlon;
+    if (queriedBuildings[makeDictKey(lat, lon)]) {
+      console.log("Hit cache");
+      dataPoints.push({
+        latitude: lat,
+        longitude: lon,
+        weight: queriedBuildings[makeDictKey(lat, lon)]
+      });
+    } else {
+      // console.log(JSON.stringify(response2.data.elements[index]));
+      const weight = predictSoundLevelByRoadCount(response2.data.elements[index].tags.total || 0);
+      queriedBuildings[makeDictKey(lat, lon)] = weight;
+      dataPoints.push({
+        latitude: lat,
+        longitude: lon,
+        weight: weight
+      });
+      index++;
+    }
+  }
+
+  // console.log(dataPoints);
+  return dataPoints;
+
+}
+
 
 // PREDICT SOUND LEVEL FROM DENSITY -----------------------------------------------------------------------------------------
 
@@ -86,40 +101,17 @@ export function predictSoundLevel(roadCount: number, buildingCount: number) {
   return soundLevel;
 }
 
+export function predictSoundLevelByRoadCount(roadCount: number) {
+  var soundLevel = (roadCount * 5) / 10;
+  if (soundLevel <= 1) {
+    soundLevel = 0;
+  }
+  return soundLevel;
+}
+
 // CREATE HEAT MAP ----------------------------------------------------------------------------------------------------------
 
 const SoundHeatMap: React.FC = () => {
-  // const [heatMapData, setHeatMapData] = useState<WeightedLatLng[]>([]);
-
-  // fetch + predict sound levels
-  // const fetchAndPredictSoundLevels = async (centerPoint: [number, number], radius: number) => {
-  //     const data = await fetchOSMData(centerPoint, radius);
-  //     const predictedSoundLevel = predictSoundLevel(data);
-
-  //     console.log(data);
-  //     console.log(predictedSoundLevel);
-
-  //     // add heatmap datapoint w/ predicted sound level
-  //     setHeatMapData(prevData => [
-  //     ...prevData,
-  //     { latitude: centerPoint[0], longitude: centerPoint[1], weight: predictedSoundLevel }
-  //     ]);
-  // };
-
-  // useEffect(() => {
-  //     const fetch = async () => {
-  //       const centerPoint: [number, number] = [47.608013, -122.335167]; // (Seattle)
-  //       const radius = 1000; // meters
-  //       await fetchAndPredictSoundLevels(centerPoint, radius);
-  //     }
-
-  //     fetch();
-  // }, []);
-
-  // useEffect(() => {
-  //   console.log("Heat Map Updated", heatMapData);
-  // }, [heatMapData]);
-
   return (
     <View style={{ flex: 1 }}>
       <MapView

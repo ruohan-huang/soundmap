@@ -42,6 +42,22 @@ export default function TabLayout() {
         name="SoundHeatMap"
         options={{
           title: "SoundHeatMap",
+          href: null,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={
+                focused ? "information-circle" : "information-circle-outline"
+              }
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="SoundmapKey"
+        options={{
+          title: "SoundmapKey",
+          href: null,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               name={

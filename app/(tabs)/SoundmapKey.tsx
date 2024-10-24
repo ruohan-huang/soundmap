@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 
 const SoundmapKey: React.FC = () => {
-    const [expanded, setExpanded] = useState(false);
-    const [heightAnim] = useState(new Animated.Value(50)); // start with collapsed height
+    const [expanded, setExpanded] = useState(true);
+    const [heightAnim] = useState(new Animated.Value(180)); // start with collapsed height
 
     const toggleExpand = () => {
         Animated.timing(heightAnim, {
