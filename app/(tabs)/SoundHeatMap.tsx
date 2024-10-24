@@ -80,7 +80,7 @@ export async function fetchOSMData(
 export function predictSoundLevel(roadCount: number, buildingCount: number) {
   var soundLevel = (roadCount * 5 + buildingCount * 2) / 15; // more weight for roads
   if (soundLevel <= 1) {
-    soundLevel = 1;
+    soundLevel = 0;
   }
   return soundLevel;
 }
