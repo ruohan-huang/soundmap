@@ -315,8 +315,8 @@ export default function HomeScreen() {
                     marker.dBFS >= -28
                       ? '#ff0000'
                       : marker.dBFS >= -35
-                      ? '#ff8f00'
-                      : '#007bff',
+                        ? '#ff8f00'
+                        : '#007bff',
                   borderRadius: 100,
                   borderWidth: 1,
                   width: 33,
@@ -328,8 +328,8 @@ export default function HomeScreen() {
                     marker.dBFS >= -28
                       ? 'volume-high'
                       : marker.dBFS >= -35
-                      ? 'volume-medium'
-                      : 'volume-low'
+                        ? 'volume-medium'
+                        : 'volume-low'
                   }
                   color={'white'}
                 />
@@ -343,13 +343,13 @@ export default function HomeScreen() {
               heatMapData.length !== 0
                 ? heatMapData
                 : [
-                    {
-                      latitude: 47.608013,
-                      longitude: -122.335167,
-                      weight: 35,
-                    },
-                    { latitude: 47, longitude: -122.335167, weight: 20 },
-                  ]
+                  {
+                    latitude: 47.608013,
+                    longitude: -122.335167,
+                    weight: 35,
+                  },
+                  { latitude: 47, longitude: -122.335167, weight: 20 },
+                ]
             }
             radius={50}
             opacity={0.7}

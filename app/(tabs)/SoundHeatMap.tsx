@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { View } from "react-native";
 import MapView, { Heatmap, LatLng } from "react-native-maps";
 import axios from "axios";
+import SoundmapKey from "./SoundmapKey";
 
 type WeightedLatLng = LatLng & {
   weight?: number;
@@ -144,6 +145,7 @@ const SoundHeatMap: React.FC = () => {
           }}
         />
       </MapView>
+      <SoundmapKey />
     </View>
   );
 };
